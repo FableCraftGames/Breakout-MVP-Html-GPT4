@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breakout Game</title>
+    <style>
+        #gameArea {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            border: 1px solid #000;
+        }
+
+        #paddle {
+            position: absolute;
+            bottom: 10px;
+            width: 100px;
+            height: 10px;
+            background-color: #000;
+        }
+
+        #ball {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #000;
+        }
+
+        .brick {
+            position: absolute;
+            width: 50px;
+            height: 20px;
+            background-color: red; /* Use different colors for different rows */
+        }
+
+    </style>
+</head>
+<body>
+<div id="gameArea">
+    <div id="paddle"></div>
+    <div id="ball"></div>
+    <div id="bricks">
+        <!-- Generate bricks dynamically using JavaScript -->
+    </div>
+</div>
+<script>
+    const brickColors = ['#FF0000', '#FFFF00', '#FFA500', '#008000', '#0000FF', '#800080'];
+    const numRows = 6;
+    const numCols = 10;
+    const brickWidth = 50;
+    const brickHeight = 20;
+    // Calculate initial ball position
+    const gameArea = document.getElementById('gameArea');
+    function createBricks() {
+        const brickSpacing = 2; // Space between bricks
+        const totalBrickWidth = numCols * (brickWidth + brickSpacing);
+        const bricksAreaLeft = (gameArea.clientWidth - totalBrickWidth) / 2;
+
+        for (let row = 0; row < numRows; row++) {
+            for (let col = 0; col < numCols; col++) {
+                const brick = document.createElement('div');
+                brick.classList.add('brick');
+                brick.style.backgroundColor = brickColors[row];
+                brick.style.left = `${bricksAreaLeft + col * (brickWidth + brickSpacing)}px`;
+                brick.style.top = `${row * (brickHeight + brickSpacing)}px`;
+                document.getElementById('bricks').appendChild(brick);
+            }
+        }
+    }
+
+
+    createBricks();
+
+    const paddle = document.getElementById('paddle');
+    const paddleSpeed = 5;
+
+    document.addEventListener('keydown', (event) => {
+        const key = event.key;
+    const paddleLeft = parseInt(paddle.style.left) || 0;
+
+    if (key === 'ArrowLeft' && paddleLeft > 0) {
+        paddle.style.left = `${paddleLeft - paddleSpeed}px`;
+    } else if (key === 'ArrowRight' && paddleLeft < (gameArea.clientWidth - paddle.clientWidth)) {
+        paddle.style.left = `${paddleLeft + paddleSpeed}px`;
+    }
+    });
+
+    
+    const ball = document.getElementById('ball');
+
+
+    
+    const initialBallX = gameArea.clientWidth / 2 - ball.clientWidth / 2;
+    const initialBallY = gameArea.clientHeight - paddle.clientHeight - ball.clientHeight - 20; // 20px above the paddle
+
+
+
+    // Set initial ball position
+    ball.style.left = `${initialBallX}px`;
+    ball.style.top = `${initialBallY}px`;
+    
+    // Update ballX and ballY
+    let ballX = initialBallX;
+    let ballY = initialBallY;
+    let ballSpeedX = 2;
+    let ballSpeedY = -2;
+
+    function moveBall() {
+        ballX += ballSpeedX;
+        ballY += ballSpeedY;
+        ball.style.left = `${ballX}px`;
+        ball.style.top = `${ballY}px`;
+    }
+
+    function ballPaddleCollision() {
+        const paddleRect = paddle.getBoundingClientRect();
+        const ballRect = ball.getBoundingClientRect();
+        const paddleWidth = paddle.clientWidth;
+        const paddleCenter = paddleRect.left + paddleWidth / 2;
+
+        if (
+            ballRect.right > paddleRect.left &&
+            ballRect.left < paddleRect.right &&
+            ballRect.bottom >= paddleRect.top &&
+            ballRect.bottom <= paddleRect.bottom
+        ) {
+            ballSpeedY = -Math.abs(ballSpeedY); // Ensure the ball bounces upwards
+
+            // Calculate the ball's position relative to the paddle's center
+            const relativeBallPosition = ballRect.left + ballRect.width / 2 - paddleCenter;
+
+            // Change the ball's horizontal speed based on its position relative to the paddle's center
+            ballSpeedX = 5 * relativeBallPosition / (paddleWidth / 2);
+        }
+    }
+
+
+
+    function ballBrickCollision() {
+        const bricks = document.getElementsByClassName('brick');
+        for (let i = 0; i < bricks.length; i++) {
+            const brick = bricks[i];
+            const brickRect = brick.getBoundingClientRect();
+            if (
+                ballX + ball.clientWidth > brickRect.left &&
+                ballX < brickRect.right &&
+                ballY + ball.clientHeight > brickRect.top &&
+                ballY < brickRect.bottom
+            ) {
+                ballSpeedY = -ballSpeedY;
+                brick.parentNode.removeChild(brick);
+                updateScore(); // Update the score when a brick is hit
+                break;
+            }
+        }
+    }
+
+
+    function ballWallCollision() {
+        if (ballX <= 0 || ballX + ball.clientWidth >= gameArea.clientWidth) {
+            ballSpeedX = -ballSpeedX;
+        }
+        if (ballY <= 0) {
+            ballSpeedY = -ballSpeedY;
+        }
+    }
+
+
+    let score = 0;
+    let lives = 3;
+
+    function updateScore() {
+        score++;
+        // Display the score on the screen
+    }
+
+    function resetBallPosition() {
+        ballX = initialBallX;
+        ballY = initialBallY;
+        ball.style.left = `${ballX}px`;
+        ball.style.top = `${ballY}px`;
+
+        // Reset the ball's speed and direction
+        ballSpeedY = -Math.abs(ballSpeedY);
+        ballSpeedX = Math.random() > 0.5 ? 2 : -2;
+    }
+
+    function handleGameOver() {
+        const remainingBricks = document.getElementsByClassName('brick').length;
+
+        if (ballY + ball.clientHeight >= gameArea.clientHeight) {
+            resetBallPosition();
+        } else if (remainingBricks === 0) {
+            alert('You won!');
+            createBricks();
+            resetBallPosition();
+            resetPaddlePosition();
+        }
+    }
+
+    function resetPaddlePosition() {
+        const initialPaddleLeft = (gameArea.clientWidth - paddle.clientWidth) / 2;
+        paddle.style.left = `${initialPaddleLeft}px`;
+    }
+
+
+
+
+    function gameLoop() {
+        moveBall();
+        ballPaddleCollision();
+        ballBrickCollision();
+        ballWallCollision();
+        handleGameOver();
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+
+
+
+
+</script>
+</body>
+</html>
