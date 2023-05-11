@@ -3,6 +3,7 @@ Breakout MVP built in HTML using ChatGPT4
 
 Follow along with us on YouTube @ https://youtu.be/QEv6ymi9gx0
 
+******************TRANSCRIPT******************
 
 Model: GPT-4
 
